@@ -62,4 +62,196 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"]
 }
 ```
+#### iam.tf
+```hcl
+resource "aws_iam_role" "role" {
+  name = "${local.org}-${local.project}-${local.env}-ssm-iam-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      },
+    ]
+  })
 
+  tags = {
+    Name = "${local.org}-${local.project}-${local.env}-ssm-iam-role"
+    Env  = "${local.env}"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ssm_managed_policy" {
+  role       = aws_iam_role.role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_instance_profile" "iam-instance-profile" {
+  name = "${local.org}-${local.project}-${local.env}-instance-profile"
+  role = aws_iam_role.role.name
+}
+```
+#### vpc.tf
+```hcl
+locals {
+  org     = "damir"
+  project = "netflix-clone"
+  env     = var.env
+}
+
+resource "aws_vpc" "vpc" {
+  cidr_block           = var.cidr-block
+  instance_tenancy     = "default"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = {
+    Name = "${local.org}-${local.project}-${local.env}-vpc"
+    Env  = "${local.env}"
+  }
+}
+
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.vpc.id
+
+  tags = {
+    Name = "${local.org}-${local.project}-${local.env}-igw"
+    env  = var.env
+  }
+
+  depends_on = [aws_vpc.vpc]
+}
+
+resource "aws_subnet" "public-subnet" {
+  count                   = var.pub-subnet-count
+  vpc_id                  = aws_vpc.vpc.id
+  cidr_block              = element(var.pub-cidr-block, count.index)
+  availability_zone       = element(var.pub-availability-zone, count.index)
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "${local.org}-${local.project}-${local.env}-public-subnet-${count.index + 1}"
+    Env  = var.env
+  }
+
+  depends_on = [aws_vpc.vpc]
+}
+
+
+resource "aws_route_table" "public-rt" {
+  vpc_id = aws_vpc.vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+
+  tags = {
+    Name = "${local.org}-${local.project}-${local.env}-public-route-table"
+    env  = var.env
+  }
+
+  depends_on = [aws_vpc.vpc]
+}
+
+resource "aws_route_table_association" "public-rta" {
+  count          = 4
+  route_table_id = aws_route_table.public-rt.id
+  subnet_id      = aws_subnet.public-subnet[count.index].id
+
+  depends_on = [aws_vpc.vpc,
+    aws_subnet.public-subnet
+  ]
+}
+
+resource "aws_security_group" "default-ec2-sg" {
+  name        = "${local.org}-${local.project}-${local.env}-sg"
+  description = "Default Security Group"
+
+  vpc_id = aws_vpc.vpc.id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"] // It should be specific IP range
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${local.org}-${local.project}-${local.env}-sg"
+  }
+}
+```
+#### main.tf
+```hcl
+locals {
+  instance_names = [
+    "jenkins-server",
+    "monitoring-server",
+    "kubernetes-master-node",
+    "kubernetes-worker-node"
+  ]
+}
+
+resource "aws_instance" "ec2" {
+  count                  = var.ec2-instance-count
+  ami                    = data.aws_ami.ubuntu.id
+  subnet_id              = aws_subnet.public-subnet[count.index].id
+  instance_type          = var.ec2_instance_type[count.index]
+  iam_instance_profile   = aws_iam_instance_profile.iam-instance-profile.name
+  vpc_security_group_ids = [aws_security_group.default-ec2-sg.id]
+  root_block_device {
+    volume_size = var.ec2_volume_size
+    volume_type = var.ec2_volume_type
+  }
+
+  tags = {
+    Name = "${local.org}-${local.project}-${local.env}-${local.instance_names[count.index]}"
+    Env  = "${local.env}"
+  }
+}
+```
+#### variables.tf
+```hcl
+variable "aws-region" {}
+variable "env" {}
+variable "cidr-block" {}
+variable "pub-subnet-count" {}
+variable "pub-cidr-block" {
+  type = list(string)
+}
+variable "pub-availability-zone" {
+  type = list(string)
+}
+variable "ec2-instance-count" {}
+variable "ec2_instance_type" {
+  type = list(string)
+}
+variable "ec2_volume_size" {}
+variable "ec2_volume_type" {}
+```
+#### dev.auto.tfvars
+```hcl
+aws-region            = "us-east-1"
+env                   = "dev"
+cidr-block            = "10.0.0.0/16"
+pub-subnet-count      = 4
+pub-cidr-block        = ["10.0.0.0/20", "10.0.16.0/20", "10.0.32.0/20", "10.0.64.0/20"]
+pub-availability-zone = ["us-east-1a", "us-east-1b", "us-east-1c", "us-east-1d"]
+ec2-instance-count    = 4
+ec2_instance_type     = ["t3a.xlarge", "t3a.medium", "t3a.medium", "t3a.medium"]
+ec2_volume_size       = 50
+ec2_volume_type       = "gp3"
+```
