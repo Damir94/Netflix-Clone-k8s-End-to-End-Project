@@ -399,3 +399,35 @@ jobs:
         if: ${{ github.event.inputs.action == 'destroy' }}
         run: terraform destroy -auto-approve
 ```
+Now, we need to create three secrets for Terraform Cloud in the GitHub Repo.
+  - Navigate to your Project Repo -> Settings
+  - Expand the Secrets and variables, then click on Actions
+
+![1_ioqNIvaos704LRsEEDoRHQ](https://github.com/user-attachments/assets/66ee0182-7d68-416e-8ee3-4c1931acf57a)
+
+
+Then, add the three variables with correct values
+  - TF_API_TOKEN
+  - TF_CLOUD_ORGANIZATION
+  - TF_WORKSPACE
+
+![1_KmR4LFhOcmbwlXLdRrjWMQ](https://github.com/user-attachments/assets/2fd3003b-1413-459f-ba1e-63c444b40230)
+
+#### Now, we are ready to deploy our Infrastructure using Terraform, Terraform Cloud, and GitHub Actions on AWS
+Go to the Actions of the GitHub Repository
+
+<img width="1900" height="933" alt="Screenshot 2026-01-01 at 11 58 27 AM" src="https://github.com/user-attachments/assets/14eb6be2-668f-44a9-8553-131f808d1cad" />
+
+Apply is successful
+
+![1_iGAFZGVCH8y8TnJCpPNwSg](https://github.com/user-attachments/assets/cf519332-411a-45f8-9c87-08517d8b5426)
+
+You can validate the resource from Terraform Cloud as well
+
+<img width="1444" height="630" alt="Screenshot 2026-01-01 at 12 03 22 PM" src="https://github.com/user-attachments/assets/236cb423-3bca-47a3-ac2d-50182ef1eeed" />
+
+Now, let’s go to the AWS Console and see whether our EC2s are there or not
+
+<img width="1607" height="308" alt="Screenshot 2026-01-01 at 12 02 45 PM" src="https://github.com/user-attachments/assets/00c05119-d1de-4f29-b857-350fdd49235c" />
+
+
