@@ -272,4 +272,130 @@ Now, Click on Sign up
 
 Now, I will click on continue with GitHub, as I already have a GitHub Account.
 
-<img width="487" height="596" alt="Screenshot 2026-01-01 at 12 51 19 PM" src="https://github.com/user-attachments/assets/acea4b2d-907b-4f99-95e7-7f0a06d50032" />
+Once you set up your account, it will look like the snippet below.
+Although I have already created one organisation.
+Now, we will create our first organisation. So, click on Create organization the " Show " on the top right
+
+Press enter or click to view image in full size
+
+![0_9zRuqftZaI8gqU8y](https://github.com/user-attachments/assets/44f58d3f-cc7c-4213-bd36-9079d124c29d)
+
+To create an organisation, you have to provide three information. Follow the below things:
+Type of Organisation: If you are using it for a personal use case, go for Personal; else, Business is fine, but you have to pay
+Organisation Name: It must be a unique name.
+Email address: Provide your email address, and click on Next.
+
+![0_ewlIQBFvyF73FHku](https://github.com/user-attachments/assets/97d30d41-2035-4038-8d8e-714681e5f6b2)
+
+Once you create the Organization , It will take you to the workspaces section.
+
+Now, we will create a workspace
+
+To create a workspace, click on create a workspace
+
+Press enter or click to view image in full size
+
+![0_sRHXhScB6xtW681A](https://github.com/user-attachments/assets/1cdaa8ca-f60e-4259-b25f-1407ed828af5)
+
+Now, we have to provide our AWS credentials to Terraform Workspace as our plan, and other Terraform operations will be running on HashiCorp-hosted servers.
+Make sure to create the Environment Variables with the correct Keys and values under the Variables section.
+
+- AWS_ACCESS_KEY_ID
+- AWS_SECRET_ACCESS_KEY
+
+![1_4OPl_5Sf6bCPFrusQRqP4A](https://github.com/user-attachments/assets/9c4e3be8-62e0-4511-90a7-247038c6990f)
+
+Now, we will have to create the token to authenticate with Terraform Cloud from GitHub Actions while running Terraform operations
+
+Go to your Profile’s Account settings in the top right
+
+After that, click on Tokens, then click on Create an API token
+
+![1_QKc8Bp0QXlCTe00gDwL9MQ](https://github.com/user-attachments/assets/18f16b35-a206-4ff3-8c96-bcde89720e6d)
+
+Provide the description and set the expiration of your token, and click on Generate token
+
+![1_2GPPMj2ks_yxfQ4B2dSwUw](https://github.com/user-attachments/assets/284650ca-47b6-49a6-a692-c469d6ec7f0c)
+
+### Automating Infrastructure using Terraform with GitHub Actions
+Now, we will automate our AWS Infrastructure using GitHub Actions
+
+The workflow script written below
+#### terraform.yaml
+```yaml
+name: '🔨 Infrastructure Configuring using Terraform on AWS' 
+
+on: 
+  workflow_dispatch:
+    inputs:
+      action:
+        type: choice
+        description: 'Terraform Action'
+        options:
+          - plan
+          - apply
+          - destroy
+        required: true
+        default: 'plan'
+
+env:
+  TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+  TF_WORKSPACE: ${{ secrets.TF_WORKSPACE }}
+  TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
+permissions:
+  contents: read
+
+
+jobs:
+  infrastructure-setup-using-terraform:
+    name: Terraform ${{ github.event.input.actions }}
+    runs-on: ubuntu-24.04
+    environment: production
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: Terraform
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setting Up the Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.13.3"
+          terraform_wrapper: true
+          cli_config_credentials_token: ${{ secrets. TF_API_TOKEN }}
+
+      - name: Cache Terraform
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.terraform.d/plugin-cache
+            .terraform
+          key: ${{ runner.os }}-terraform-${{ hashFiles('**/*.tf') }}
+          restore-keys: |
+            ${{ runner.os }}-terraform-
+          
+      - name: Initialising the Terraform
+        run: terraform init
+
+      - name: Terraform Format Check
+        run: terraform fmt -check --diff
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        if: ${{ github.event.inputs.action == 'plan' }}
+        run: terraform plan -input=false
+
+      - name: Terraform Apply
+        if: ${{ github.event.inputs.action == 'apply' }}
+        run: terraform apply -auto-approve
+
+      - name: Terraform destroy
+        if: ${{ github.event.inputs.action == 'destroy' }}
+        run: terraform destroy -auto-approve
+```
