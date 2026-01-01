@@ -255,3 +255,11 @@ ec2_instance_type     = ["t3a.xlarge", "t3a.medium", "t3a.medium", "t3a.medium"]
 ec2_volume_size       = 50
 ec2_volume_type       = "gp3"
 ```
+### Setting Up Terraform Cloud Terraform State Management
+Click on the URL to signin/signup for Terraform Cloud
+```bash
+https://app.terraform.io/session
+```
+Click on Continue with HCP account
+<img width="681" height="334" alt="Screenshot 2026-01-01 at 12 49 26 PM" src="https://github.com/user-attachments/assets/780635be-45b3-43e3-a66e-be2cc04ddc20" />
+
