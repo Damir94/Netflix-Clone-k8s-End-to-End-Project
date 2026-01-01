@@ -261,5 +261,15 @@ Click on the URL to signin/signup for Terraform Cloud
 https://app.terraform.io/session
 ```
 Click on Continue with HCP account
+
 <img width="681" height="334" alt="Screenshot 2026-01-01 at 12 49 26 PM" src="https://github.com/user-attachments/assets/780635be-45b3-43e3-a66e-be2cc04ddc20" />
 
+We are creating an account on HashiCorp Cloud Platform, as it covers multiple services along with Terraform . This will be useful for your future work. 
+If you want, you can also simply sign up for a Terraform account.
+Now, Click on Sign up
+
+<img width="512" height="703" alt="Screenshot 2026-01-01 at 12 50 43 PM" src="https://github.com/user-attachments/assets/f258ea97-9a47-446b-a0e1-21ee45672cbc" />
+
+Now, I will click on continue with GitHub, as I already have a GitHub Account.
+
+<img width="487" height="596" alt="Screenshot 2026-01-01 at 12 51 19 PM" src="https://github.com/user-attachments/assets/acea4b2d-907b-4f99-95e7-7f0a06d50032" />
