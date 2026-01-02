@@ -430,4 +430,6 @@ Now, let’s go to the AWS Console and see whether our EC2s are there or not
 
 <img width="1607" height="308" alt="Screenshot 2026-01-01 at 12 02 45 PM" src="https://github.com/user-attachments/assets/00c05119-d1de-4f29-b857-350fdd49235c" />
 
+As all four machines are running. We are going to start with the Jenkins Server to configure.
+
 
